@@ -8,21 +8,35 @@ public class PatrolBehaviour : StateMachineBehaviour {
     public GameObject patrolPointsPrefab;
     Transform patrolPoints;
     int randomPoint;
+    float timeStillAwake;
+    int isSleepingHash = Animator.StringToHash("isSleeping");
+    Transform playerTransform;
+    int distanceHash = Animator.StringToHash("playerDistance");
+    int inSightHash = Animator.StringToHash("playerInSight");
 
 
 	 // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
 	override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+
+        playerTransform = GameObject.FindGameObjectWithTag("Player").transform;
 
         if (patrolPoints == null) {
             patrolPoints = Instantiate(patrolPointsPrefab).transform;
         }
 
         randomPoint = Random.Range(0, patrolPoints.childCount);
+        timeStillAwake = Random.Range(3.0f, 6.0f);
 	
 	}
 
 	// OnStateUpdate is called on each Update frame between OnStateEnter and OnStateExit callbacks
 	override public void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex) {
+
+        timeStillAwake -= Time.deltaTime;
+
+        if (timeStillAwake <= 0) {
+            animator.SetBool(isSleepingHash, true);  
+        }
 
         Vector2 current = animator.transform.position;
         Vector2 target = patrolPoints.GetChild(randomPoint).position;
@@ -32,6 +46,16 @@ public class PatrolBehaviour : StateMachineBehaviour {
         } else {
             randomPoint = Random.Range(0, patrolPoints.childCount);
         }
+
+        animator.SetFloat(distanceHash, Vector2.Distance(animator.transform.position, playerTransform.position));
+
+        RaycastHit2D hit = Physics2D.Linecast(animator.transform.position, playerTransform.position);
+        if (hit.collider.tag == "Player") {
+            animator.SetBool(inSightHash, true);
+        } else {
+            animator.SetBool(inSightHash, false);
+        }
+
 
 
 	}
